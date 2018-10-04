@@ -1,0 +1,77 @@
+---
+title: "Hw03"
+author: "Vetle Birkeland Huglen"
+date: "1 10 2018"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+suppressPackageStartupMessages(library(tidyverse))
+suppressPackageStartupMessages(library(gapminder))
+```
+
+Firstly we look at the distribution of gdpPercap by continent. We can make a table showing som key values, and also violin plots, which are really nice for summarising a distribution.
+
+```{r}
+gdp_overview <- gapminder %>%
+  group_by(continent) %>%
+  summarize(max_gdpPercap = max(gdpPercap),
+              min_gdpPercap = min(gdpPercap),
+              gdpSpread = max_gdpPercap-min_gdpPercap)
+  
+knitr::kable(gdp_overview)
+
+gapminder %>% 
+  group_by(continent) %>%
+  ggplot(aes(continent, gdpPercap, fill = continent)) +
+  geom_violin()
+```
+The violin plots are really dragged out. This case may be better visualised by using a log function on the values:
+
+```{r}
+gapminder %>% 
+  group_by(continent) %>%
+  ggplot(aes(continent, log(gdpPercap), fill = continent)) +
+  geom_violin()
+```
+Now lets look at a way of removing outliers from a statistic. We can compare the so called trimmed mean to the regular mean, to see if there is a big difference.
+
+```{r}
+gapminder %>%
+  group_by(year) %>%
+  summarize(trimMeanLifeExp = mean(lifeExp, trim=0.25),
+            regMeanLifeExp = mean(lifeExp)) %>%
+  ggplot() +
+  geom_line(aes(year, trimMeanLifeExp), color = 'red') +
+  geom_line(aes(year, regMeanLifeExp), color = 'blue')
+```
+Here follows a simple plot of how the life expectancy has changed over the years in each continent. I really like the geom_smooth function, since it also show the variance of the data.
+
+```{r}
+gapminder %>%
+  group_by(continent) %>%
+  ggplot(aes(year, lifeExp)) +
+  geom_smooth(aes(colour = continent))
+  
+  #geom_bar(stat = "identity", aes(fill = continent))
+```
+And now to the fourth task. I found this one really hard, but I dont really know why. Now that its working, it seems to be in a very intuitive way. The table and graph shows the number and percentage of countries below the mean life expectancy in their respective continents, for each year. 
+
+```{r}
+countries_under_mean <- gapminder %>%
+  group_by(year, continent) %>%
+  summarise(mean = mean(lifeExp),
+            n_under_mean = sum(lifeExp < mean),
+            percent_under_mean_lifeExp = n_under_mean/n())
+
+knitr::kable(countries_under_mean)
+
+countries_under_mean %>%
+  ggplot(aes(year, percent_under_mean_lifeExp)) +
+  geom_line(aes(colour = continent))
+```
+
